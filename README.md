@@ -1,6 +1,20 @@
-# neural-nearest-neighbor
+# neural Nearest $k$ Neighbor
 
-Implementation of neural Nearest Neighbor in pytorch ([paper](https://arxiv.org/abs/1810.12575)) a differentiable $k$-nearest-neighbor algorithm (kNN).
+Implementation of neural $k$ Nearest Neighbor in pytorch, a differentiable replacement for kNN (see [paper](https://arxiv.org/abs/1810.12575)).
+
+### Installation
+
+```
+pip install git+ssh://git@github.com/dominiquegarmier/neural-nearest-neighbor
+```
+
+and for development:
+
+```
+pip install -r requirements-dev.txt
+```
+
+### Citations
 
 ```bibtex
 @misc{plötz2018neural,

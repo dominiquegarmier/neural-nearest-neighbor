@@ -7,6 +7,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops import einsum
 
+__all__ = [
+    'NKNN',
+]
+
 
 @torch.jit.script
 def _compute_omega(
@@ -23,7 +27,7 @@ def _compute_omega(
     return omega
 
 
-class NeuralKNN(nn.Module):
+class NKNN(nn.Module):
     k: int
     dim: int
     temp: float
