@@ -47,7 +47,7 @@ class NKNN(nn.Module):
             self._feature = dim
             self._no_values = True
 
-    def similarity(
+    def _similarity(
         self,
         query: Annotated[torch.Tensor, '*B', 'D'],
         key: Annotated[torch.Tensor, '*B', 'D', 'N'],
@@ -67,7 +67,7 @@ class NKNN(nn.Module):
         assert values.shape[-2] == self._feature
         assert keys.shape[-1] == values.shapes[-1]
 
-        sims = self.similarity(query, keys)
+        sims = self._similarity(query, keys)
         omega = _compute_omega(s=sims, k=self._k, t=self._temp)
         k_nearest = einsum(omega, values, '*B N K, *B F N -> *B K F')
         return k_nearest
