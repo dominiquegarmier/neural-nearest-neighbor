@@ -1,6 +1,6 @@
 # neural $k$ nearest neighbor
 
-Implementation of neural $k$ nearest neighbor in pytorch, a differentiable replacement for kNN (based on [paper](https://arxiv.org/abs/1810.12575)).
+Implementation of [neural $k$ nearest neighbor](https://arxiv.org/abs/1810.12575) in pytorch, a differentiable replacement for kNN.
 
 ### Installation
 
