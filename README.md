@@ -13,6 +13,9 @@ and for development:
 ```
 pip install -r requirements-dev.txt
 ```
+### Notes
+When using `value` you have to make some additional assumtions to get the same convergence conditions as outlined in the [paper](https://arxiv.org/abs/1810.12575).
+Notably you have to assume that there exists some continous $f: k \mapsto v$ that maps keys to values.
 
 ### Citations
 
