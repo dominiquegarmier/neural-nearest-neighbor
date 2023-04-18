@@ -52,7 +52,8 @@ class NKNN(nn.Module):
         query: Annotated[torch.Tensor, '*B', 'D'],
         key: Annotated[torch.Tensor, '*B', 'D', 'N'],
     ) -> Annotated[torch.Tensor, '*B', 'N']:
-        assert query.shape[-1] == key.shape[-1] == self.dim
+        assert query.shape[-1] == key.shape[-2] == self.dim
+        assert key.shape[-1] == self.num
         return -einsum('*B D, *B D N -> *B N', query, key) / (self.dim**0.5)
 
     def forward(
@@ -61,6 +62,13 @@ class NKNN(nn.Module):
         keys: Annotated[torch.Tensor, '*B', 'D', 'N'],
         values: Annotated[torch.Tensor, '*B', 'F', 'N'] | None = None,
     ) -> Annotated[torch.Tensor, '*B', 'K', 'F']:
+        if values is None:
+            values = keys
+        assert query.shape[-1] == keys.shape[-2] == self.dim
+        assert keys.shape[-1] == values.shapes[-1] == self.num
+        assert values.shape[-2] == self.feature
+
         sims = self.similarity(query, keys)
         omega = _compute_omega(s=sims, k=self.k, t=self.temp)
-        return einsum(omega, values, '*B N K, *B F N -> *B K F')
+        k_nearest = einsum(omega, values, '*B N K, *B F N -> *B K F')
+        return k_nearest
