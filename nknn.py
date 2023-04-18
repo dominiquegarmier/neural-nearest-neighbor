@@ -28,33 +28,31 @@ def _compute_omega(
 
 
 class NKNN(nn.Module):
-    k: int
-    dim: int
-    temp: float
-    num: int
-    feature: int
+    _k: int
+    _temp: float
+    _dim: int
+    _feature: int
+
+    _no_values: bool = False
 
     def __init__(
         self, k: int, dim: int, temp: float, num: int, feature: int | None = None
     ) -> None:
         super().__init__()
-        self.temp = temp
+        self._k = k
+        self._temp = temp
 
-        self.k = k
-        self.num = num
-
-        self.dim = dim
+        self._dim = dim
         if feature is None:
-            self.feature = dim
+            self._feature = dim
+            self._no_values = True
 
     def similarity(
         self,
         query: Annotated[torch.Tensor, '*B', 'D'],
         key: Annotated[torch.Tensor, '*B', 'D', 'N'],
     ) -> Annotated[torch.Tensor, '*B', 'N']:
-        assert query.shape[-1] == key.shape[-2] == self.dim
-        assert key.shape[-1] == self.num
-        return -einsum('*B D, *B D N -> *B N', query, key) / (self.dim**0.5)
+        return -einsum('*B D, *B D N -> *B N', query, key) / (self._dim**0.5)
 
     def forward(
         self,
@@ -63,12 +61,13 @@ class NKNN(nn.Module):
         values: Annotated[torch.Tensor, '*B', 'F', 'N'] | None = None,
     ) -> Annotated[torch.Tensor, '*B', 'K', 'F']:
         if values is None:
+            assert self._no_values
             values = keys
-        assert query.shape[-1] == keys.shape[-2] == self.dim
-        assert keys.shape[-1] == values.shapes[-1] == self.num
-        assert values.shape[-2] == self.feature
+        assert query.shape[-1] == keys.shape[-2] == self._dim
+        assert values.shape[-2] == self._feature
+        assert keys.shape[-1] == values.shapes[-1]
 
         sims = self.similarity(query, keys)
-        omega = _compute_omega(s=sims, k=self.k, t=self.temp)
+        omega = _compute_omega(s=sims, k=self._k, t=self._temp)
         k_nearest = einsum(omega, values, '*B N K, *B F N -> *B K F')
         return k_nearest
