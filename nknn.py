@@ -12,17 +12,16 @@ __all__ = [
 ]
 
 
-@torch.jit.script
 def _compute_omega(
     s: Annotated[torch.Tensor, '*B', 'N'], k: int, t: float
 ) -> Annotated[torch.Tensor, '*B', 'N', 'K']:
     alpha = F.softmax(s, dim=-1)
     omega = torch.empty(*s.shape, k)
 
-    omega[..., 0] = F.softmax(alpha / t)
+    omega[..., 0] = F.softmax(alpha / t, dim=-1)
     for i in range(1, k):
         alpha = alpha + torch.log(1 - omega[..., i - 1])
-        omega[..., i] = F.softmax(alpha / t)
+        omega[..., i] = F.softmax(alpha / t, dim=-1)
 
     return omega
 
@@ -36,15 +35,15 @@ class NKNN(nn.Module):
     _no_values: bool = False
 
     def __init__(
-        self, k: int, dim: int, temp: float, num: int, feature: int | None = None
+        self, k: int, dim: int, temp: float, feature: int | None = None
     ) -> None:
         super().__init__()
         self._k = k
         self._temp = temp
 
         self._dim = dim
+        self._feature = feature or dim
         if feature is None:
-            self._feature = dim
             self._no_values = True
 
     def _similarity(
@@ -52,7 +51,7 @@ class NKNN(nn.Module):
         query: Annotated[torch.Tensor, '*B', 'D'],
         key: Annotated[torch.Tensor, '*B', 'D', 'N'],
     ) -> Annotated[torch.Tensor, '*B', 'N']:
-        return -einsum('*B D, *B D N -> *B N', query, key) / (self._dim**0.5)
+        return -einsum(query, key, '... D, ... D N -> ... N') / (self._dim**0.5)
 
     def forward(
         self,
@@ -65,9 +64,9 @@ class NKNN(nn.Module):
             values = keys
         assert query.shape[-1] == keys.shape[-2] == self._dim
         assert values.shape[-2] == self._feature
-        assert keys.shape[-1] == values.shapes[-1]
+        assert keys.shape[-1] == values.shape[-1]
 
         sims = self._similarity(query, keys)
         omega = _compute_omega(s=sims, k=self._k, t=self._temp)
-        k_nearest = einsum(omega, values, '*B N K, *B F N -> *B K F')
+        k_nearest = einsum(omega, values, '... N K, ... F N -> ... K F')
         return k_nearest
